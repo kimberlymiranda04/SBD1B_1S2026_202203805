@@ -46,7 +46,17 @@ node src/app.js
 ```
 
 ### 1. Evidencia de funcionamiento
-Carga de Datos
+Insertar de Datos masivo
 <img width="1909" height="953" alt="image" src="https://github.com/user-attachments/assets/717dd97c-d59f-4a3a-9b9b-fb862856ccef" />
 <img width="1902" height="1009" alt="image" src="https://github.com/user-attachments/assets/f15f6ad9-9fb3-4db4-a006-259b0373bd7d" />
+
+Actualizar datos masivo
+<img width="1898" height="1032" alt="image" src="https://github.com/user-attachments/assets/a70941ed-7938-41e6-9458-3796d40c11bf" />
+<img width="1912" height="1012" alt="image" src="https://github.com/user-attachments/assets/72b37293-d68b-419f-9a60-3474438dc227" />
+
+Mostrar datos con id y tabla 
+<img width="1908" height="1038" alt="image" src="https://github.com/user-attachments/assets/64966beb-84d3-4571-b01d-2ee93fc26720" />
+<img width="1916" height="1022" alt="image" src="https://github.com/user-attachments/assets/971a8c92-f83d-480f-a774-3a3d002b15c3" />
+
+
 
