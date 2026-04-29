@@ -1,0 +1,24 @@
+{
+  "success": true,
+  "message": "Proceso de eliminación de tablas finalizado",
+  "tablasEliminadas": 12,
+  "tablasNoEncontradas": [],
+  "errores": [],
+  "detalle": {
+    "eliminadas": [
+      "RESPUESTA_PRACTICO_USUARIO",
+      "RESPUESTA_USUARIO",
+      "EXAMEN",
+      "CORRELATIVO",
+      "REGISTRO",
+      "UBICACION",
+      "ESCUELA",
+      "CENTRO",
+      "MUNICIPIO",
+      "DEPARTAMENTO",
+      "PREGUNTAS",
+      "PREGUNTAS_PRACTICO"
+    ],
+    "fallidas": []
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "success": true,
+  "message": "Ranking de evaluados obtenido correctamente",
+  "nota_aprobatoria": "61%",
+  "totalEvaluados": 4,
+  "data": [
+    {
+      "PUESTO": 1,
+      "EVALUADO": "María Elena Rodríguez Morales",
+      "GENERO": "F",
+      "TIPO_LICENCIA": "B",
+      "CENTRO": "Centro de Evaluación Antigua Guatemala",
+      "ESCUELA": "Escuela de Manejo AutoMaster",
+      "TOTAL_EXAMENES": 1,
+      "PROMEDIO_TEORICO": 100,
+      "PROMEDIO_PRACTICO": 90.91,
+      "NOTA_FINAL": 95.46,
+      "ESTADO": "APROBADO"
+    },
+    {
+      "PUESTO": 2,
+      "EVALUADO": "Juan Carlos López García",
+      "GENERO": "M",
+      "TIPO_LICENCIA": "A",
+      "CENTRO": "Centro de Evaluación Zona 12",
+      "ESCUELA": "Escuela de Manejo AutoMaster",
+      "TOTAL_EXAMENES": 1,
+      "PROMEDIO_TEORICO": 100,
+      "PROMEDIO_PRACTICO": 88.57,
+      "NOTA_FINAL": 94.29,
+      "ESTADO": "APROBADO"
+    },
+    {
+      "PUESTO": 3,
+      "EVALUADO": "Carlos Alberto Méndez Castillo",
+      "GENERO": "M",
+      "TIPO_LICENCIA": "A",
+      "CENTRO": "Centro de Evaluación Zona 12",
+      "ESCUELA": "Academia Vial GuateDrive",
+      "TOTAL_EXAMENES": 1,
+      "PROMEDIO_TEORICO": 50,
+      "PROMEDIO_PRACTICO": 75,
+      "NOTA_FINAL": 62.5,
+      "ESTADO": "APROBADO"
+    },
+    {
+      "PUESTO": 4,
+      "EVALUADO": "Ana Sofía Guerrero Díaz",
+      "GENERO": "F",
+      "TIPO_LICENCIA": "A",
+      "CENTRO": "Centro de Evaluación Escuintla",
+      "ESCUELA": "Instituto de Conducción Segura",
+      "TOTAL_EXAMENES": 1,
+      "PROMEDIO_TEORICO": null,
+      "PROMEDIO_PRACTICO": null,
+      "NOTA_FINAL": null,
+      "ESTADO": "SIN DATOS"
+    }
+  ]
+}

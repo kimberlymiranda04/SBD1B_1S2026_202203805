@@ -761,67 +761,418 @@ app.get('/api/mostrar-datos', async (req, res) => {
 
 
 
-// DELETE - Eliminar un registro
-app.delete('/api/aspirantes/:id', async (req, res) => {
+// DELETE - Eliminar TABLAS
+app.delete('/api/eliminar-tablas', async (req, res) => {
+    const data = req.body;
+    
+    // ORDEN INVERSO para eliminar tablas (respetar FK)
+    // Primero tablas que dependen de otras (hijas), luego las padres
+    const ordenEliminacion = [
+        'RESPUESTA_PRACTICO_USUARIO',
+        'RESPUESTA_USUARIO',
+        'EXAMEN',
+        'CORRELATIVO',
+        'REGISTRO',
+        'UBICACION',
+        'ESCUELA',
+        'CENTRO',
+        'MUNICIPIO',
+        'DEPARTAMENTO',
+        'PREGUNTAS',
+        'PREGUNTAS_PRACTICO'
+    ];
+
+    let eliminadas = 0;
+    let fallidas = [];
+    let warnings = [];
+
     try {
-        await db.execute(`DELETE FROM aspirantes WHERE id = :id`, { id: req.params.id });
-        res.json({ message: 'Eliminado exitosamente' });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
+        // Verificar que se enviaron tablas para eliminar
+        if (!data.tablas || !Array.isArray(data.tablas) || data.tablas.length === 0) {
+            return res.status(400).json({
+                success: false,
+                error: 'Debe enviar un arreglo de nombres de tablas en el campo "tablas"'
+            });
+        }
+
+        const tablasAEliminar = data.tablas.map(t => t.toUpperCase());
+        
+        // Validar que todas las tablas existen antes de empezar
+        const tablasValidas = ordenEliminacion.filter(t => tablasAEliminar.includes(t));
+        const tablasInvalidas = tablasAEliminar.filter(t => !ordenEliminacion.includes(t));
+        
+        if (tablasInvalidas.length > 0) {
+            return res.status(400).json({
+                success: false,
+                error: `Las siguientes tablas no son válidas: ${tablasInvalidas.join(', ')}`,
+                tablasValidas: ordenEliminacion
+            });
+        }
+
+        console.log(`Eliminando tablas: ${tablasValidas.join(', ')}`);
+
+        // Eliminar en el orden correcto (respetando FK)
+        for (const tabla of ordenEliminacion) {
+            if (tablasValidas.includes(tabla)) {
+                try {
+                    // Verificar si la tabla existe antes de intentar eliminarla
+                    const checkSql = `SELECT table_name FROM user_tables WHERE table_name = :tabla`;
+                    const checkResult = await db.execute(checkSql, { tabla: tabla });
+                    
+                    if (checkResult.rows.length === 0) {
+                        warnings.push(`Tabla ${tabla} no existe, se omite`);
+                        continue;
+                    }
+                    
+                    // Deshabilitar restricciones FK si es necesario
+                    const disableFkSql = `
+                        BEGIN
+                            FOR c IN (SELECT constraint_name FROM user_constraints 
+                                      WHERE table_name = :tabla AND constraint_type = 'R') LOOP
+                                EXECUTE IMMEDIATE 'ALTER TABLE ${tabla} DISABLE CONSTRAINT ' || c.constraint_name;
+                            END LOOP;
+                        END;
+                    `;
+                    
+                    try {
+                        await db.execute(disableFkSql, { tabla: tabla });
+                    } catch (fkError) {
+                        // Si no se pueden deshabilitar, continuar igual
+                        console.log(`No se pudieron deshabilitar FK para ${tabla}: ${fkError.message}`);
+                    }
+                    
+                    // Ejecutar DROP TABLE
+                    const sql = `DROP TABLE ${tabla} CASCADE CONSTRAINTS`;
+                    await db.execute(sql);
+                    
+                    eliminadas++;
+                    console.log(`Tabla eliminada: ${tabla}`);
+                    
+                } catch (errorItem) {
+                    const errorMsg = `Error al eliminar tabla ${tabla}: ${errorItem.message}`;
+                    console.error(` ${errorMsg}`);
+                    fallidas.push(errorMsg);
+                }
+            }
+        }
+
+        res.status(200).json({ 
+            success: true,
+            message: 'Proceso de eliminación de tablas finalizado',
+            tablasEliminadas: eliminadas,
+            tablasNoEncontradas: warnings,
+            errores: fallidas,
+            detalle: {
+                eliminadas: tablasValidas.filter(t => !fallidas.some(f => f.includes(t))),
+                fallidas: fallidas.map(f => f.split(':')[0].replace('Error al eliminar tabla ', ''))
+            }
+        });
+
+    } catch (errorGeneral) {
+        console.error('Error crítico:', errorGeneral);
+        res.status(500).json({ 
+            success: false,
+            error: 'Error interno del servidor',
+            detalles: errorGeneral.message 
+        });
     }
 });
-
 // CONSULTAS ESTADÍSTICAS 
 
-// 1. Promedios de puntajes por examen
-app.get('/api/estadisticas/promedios', async (req, res) => {
+// CONSULTA 1: Estadísticas de evaluaciones por centro y escuela 
+// Muestra: Total de exámenes, promedio teórico, promedio práctico y aprobados
+
+app.get('/api/estadisticas/centro-escuela', async (req, res) => {
     try {
-        const result = await db.execute(`
-            SELECT e.id, e.nombre, AVG(er.puntaje) as promedio
-            FROM examenes e
-            JOIN examenes_realizados er ON e.id = er.examen_id
-            GROUP BY e.id, e.nombre
-            ORDER BY promedio DESC
-        `);
-        res.json(result.rows);
+        const sql = `
+            WITH 
+            -- 1. Calcular el puntaje máximo teórico por examen (cada pregunta vale 100%)
+            puntaje_teorico_por_examen AS (
+                SELECT 
+                    ex.id_examen,
+                    COUNT(DISTINCT ru.pregunta_id_pregunta) AS total_preguntas_teoricas,
+                    SUM(CASE WHEN ru.respuesta = p.respuesta_correcta THEN 100 ELSE 0 END) AS puntaje_teorico_total
+                FROM EXAMEN ex
+                LEFT JOIN RESPUESTA_USUARIO ru ON ru.examen_id_examen = ex.id_examen
+                LEFT JOIN PREGUNTAS p ON ru.pregunta_id_pregunta = p.id_pregunta
+                GROUP BY ex.id_examen
+            ),
+            
+            -- 2. Calcular el puntaje máximo práctico por examen
+            puntaje_practico_por_examen AS (
+                SELECT 
+                    ex.id_examen,
+                    SUM(pp.punteo) AS puntaje_maximo_practico,
+                    SUM(rpu.nota) AS puntaje_practico_obtenido
+                FROM EXAMEN ex
+                LEFT JOIN RESPUESTA_PRACTICO_USUARIO rpu ON rpu.examen_id_examen = ex.id_examen
+                LEFT JOIN PREGUNTAS_PRACTICO pp ON rpu.pregunta_practico_id_pregunta_practico = pp.id_pregunta_practico
+                GROUP BY ex.id_examen
+            )
+            
+            -- Consulta principal por centro y escuela
+            SELECT 
+                c.id_centro,
+                c.nombre AS centro_nombre,
+                e.id_escuela,
+                e.nombre AS escuela_nombre,
+                
+                -- Totales
+                COUNT(DISTINCT ex.id_examen) AS total_examenes,
+                
+                -- PROMEDIO TEÓRICO REAL (suma de porcentajes / número de exámenes)
+                ROUND(AVG(pte.puntaje_teorico_total / NULLIF(pte.total_preguntas_teoricas, 0)), 2) AS promedio_teorico,
+                
+                -- PROMEDIO PRÁCTICO REAL (suma de puntajes obtenidos / puntaje máximo * 100)
+                ROUND(AVG((ppe.puntaje_practico_obtenido / NULLIF(ppe.puntaje_maximo_practico, 0)) * 100), 2) AS promedio_practico,
+                
+                -- NOTA FINAL (promedio de teoría y práctica)
+                ROUND(
+                    (ROUND(AVG(pte.puntaje_teorico_total / NULLIF(pte.total_preguntas_teoricas, 0)), 2) +
+                     ROUND(AVG((ppe.puntaje_practico_obtenido / NULLIF(ppe.puntaje_maximo_practico, 0)) * 100), 2)) / 2, 2
+                ) AS nota_final,
+                
+                -- APROBADO (nota final >= 61%)
+                CASE 
+                    WHEN (ROUND(AVG(pte.puntaje_teorico_total / NULLIF(pte.total_preguntas_teoricas, 0)), 2) +
+                          ROUND(AVG((ppe.puntaje_practico_obtenido / NULLIF(ppe.puntaje_maximo_practico, 0)) * 100), 2)) / 2 >= 61 
+                    THEN 'APROBADO'
+                    ELSE 'NO APROBADO'
+                END AS estado
+                
+            FROM CENTRO c
+            INNER JOIN UBICACION u ON c.id_centro = u.centro_id_centro
+            INNER JOIN ESCUELA e ON u.escuela_id_escuela = e.id_escuela
+            INNER JOIN REGISTRO r ON r.ubicacion_escuela_id_escuela = e.id_escuela 
+                                  AND r.ubicacion_centro_id_centro = c.id_centro
+            INNER JOIN EXAMEN ex ON ex.registro_id_registro = r.id_registro
+            LEFT JOIN puntaje_teorico_por_examen pte ON pte.id_examen = ex.id_examen
+            LEFT JOIN puntaje_practico_por_examen ppe ON ppe.id_examen = ex.id_examen
+            GROUP BY c.id_centro, c.nombre, e.id_escuela, e.nombre
+            ORDER BY c.nombre, e.nombre
+        `;
+        
+        const result = await db.execute(sql);
+        
+        // Verificar si hay resultados
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'No se encontraron datos de evaluaciones',
+                data: []
+            });
+        }
+        
+        // Enviar respuesta exitosa
+        res.json({
+            success: true,
+            message: 'Estadísticas obtenidas correctamente',
+            nota_aprobatoria: '61%',
+            totalRegistros: result.rows.length,
+            data: result.rows
+        });
+        
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.error('Error en consulta de estadísticas centro-escuela:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error interno del servidor',
+            detalles: error.message
+        });
     }
 });
 
-// 2. Rankings de evaluados
-app.get('/api/estadisticas/rankings', async (req, res) => {
+// CONSULTA 2: Ranking de evaluados por resultado final
+// Muestra: Puesto, evaluado, género, tipo de licencia, centro, escuela,
+//          total exámenes, promedios, nota final y estado
+// Ordenado por nota final (mayor a menor, NULLs al final)
+
+app.get('/api/estadisticas/ranking-evaluados', async (req, res) => {
     try {
-        const result = await db.execute(`
-            SELECT a.id, a.nombre, AVG(er.puntaje) as promedio_puntaje,
-                   COUNT(er.id) as examenes_presentados,
-                   RANK() OVER (ORDER BY AVG(er.puntaje) DESC) as ranking
-            FROM aspirantes a
-            JOIN examenes_realizados er ON a.id = er.aspirante_id
-            GROUP BY a.id, a.nombre
-            ORDER BY ranking
-        `);
-        res.json(result.rows);
+        const sql = `
+            WITH 
+            -- 1. Calcular el puntaje máximo teórico por examen (cada pregunta vale 100%)
+            puntaje_teorico_por_examen AS (
+                SELECT 
+                    ex.id_examen,
+                    COUNT(DISTINCT ru.pregunta_id_pregunta) AS total_preguntas_teoricas,
+                    SUM(CASE WHEN ru.respuesta = p.respuesta_correcta THEN 100 ELSE 0 END) AS puntaje_teorico_total
+                FROM EXAMEN ex
+                LEFT JOIN RESPUESTA_USUARIO ru ON ru.examen_id_examen = ex.id_examen
+                LEFT JOIN PREGUNTAS p ON ru.pregunta_id_pregunta = p.id_pregunta
+                GROUP BY ex.id_examen
+            ),
+
+            -- 2. Calcular el puntaje máximo práctico por examen
+            puntaje_practico_por_examen AS (
+                SELECT 
+                    ex.id_examen,
+                    SUM(pp.punteo) AS puntaje_maximo_practico,
+                    SUM(rpu.nota) AS puntaje_practico_obtenido
+                FROM EXAMEN ex
+                LEFT JOIN RESPUESTA_PRACTICO_USUARIO rpu ON rpu.examen_id_examen = ex.id_examen
+                LEFT JOIN PREGUNTAS_PRACTICO pp ON rpu.pregunta_practico_id_pregunta_practico = pp.id_pregunta_practico
+                GROUP BY ex.id_examen
+            ),
+
+            -- 3. Calcular nota final por examen (usando el mismo método que Consulta 1)
+            nota_final_por_examen AS (
+                SELECT 
+                    ex.id_examen,
+                    ex.registro_id_registro,
+                    ROUND(COALESCE(pte.puntaje_teorico_total, 0) / NULLIF(pte.total_preguntas_teoricas, 0), 2) AS promedio_teorico,
+                    ROUND((COALESCE(ppe.puntaje_practico_obtenido, 0) / NULLIF(ppe.puntaje_maximo_practico, 0)) * 100, 2) AS promedio_practico,
+                    ROUND(
+                        (ROUND(COALESCE(pte.puntaje_teorico_total, 0) / NULLIF(pte.total_preguntas_teoricas, 0), 2) +
+                         ROUND((COALESCE(ppe.puntaje_practico_obtenido, 0) / NULLIF(ppe.puntaje_maximo_practico, 0)) * 100, 2)) / 2, 2
+                    ) AS nota_final
+                FROM EXAMEN ex
+                LEFT JOIN puntaje_teorico_por_examen pte ON pte.id_examen = ex.id_examen
+                LEFT JOIN puntaje_practico_por_examen ppe ON ppe.id_examen = ex.id_examen
+            )
+
+            -- 4. Ranking final: NULL al final
+            SELECT 
+                ROW_NUMBER() OVER (ORDER BY 
+                    CASE WHEN AVG(nfe.nota_final) IS NULL THEN 1 ELSE 0 END,
+                    AVG(nfe.nota_final) DESC NULLS LAST
+                ) AS puesto,
+                r.nombre_completo AS evaluado,
+                r.genero,
+                r.tipo_licencia,
+                c.nombre AS centro,
+                e.nombre AS escuela,
+                COUNT(DISTINCT nfe.id_examen) AS total_examenes,
+                ROUND(AVG(nfe.promedio_teorico), 2) AS promedio_teorico,
+                ROUND(AVG(nfe.promedio_practico), 2) AS promedio_practico,
+                ROUND(AVG(nfe.nota_final), 2) AS nota_final,
+                CASE 
+                    WHEN AVG(nfe.nota_final) >= 61 THEN 'APROBADO'
+                    WHEN AVG(nfe.nota_final) IS NULL THEN 'SIN DATOS'
+                    ELSE 'NO APROBADO'
+                END AS estado
+            FROM REGISTRO r
+            INNER JOIN EXAMEN ex ON ex.registro_id_registro = r.id_registro
+            INNER JOIN nota_final_por_examen nfe ON nfe.id_examen = ex.id_examen
+            INNER JOIN CENTRO c ON r.ubicacion_centro_id_centro = c.id_centro
+            INNER JOIN ESCUELA e ON r.ubicacion_escuela_id_escuela = e.id_escuela
+            GROUP BY r.nombre_completo, r.genero, r.tipo_licencia, c.nombre, e.nombre
+            ORDER BY 
+                CASE WHEN AVG(nfe.nota_final) IS NULL THEN 1 ELSE 0 END,
+                AVG(nfe.nota_final) DESC NULLS LAST
+        `;
+        
+        const result = await db.execute(sql);
+        
+        // Verificar si hay resultados
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'No se encontraron datos de evaluados',
+                data: []
+            });
+        }
+        
+        // Enviar respuesta exitosa
+        res.json({
+            success: true,
+            message: 'Ranking de evaluados obtenido correctamente',
+            nota_aprobatoria: '61%',
+            totalEvaluados: result.rows.length,
+            data: result.rows
+        });
+        
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.error('Error en consulta de ranking de evaluados:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error interno del servidor',
+            detalles: error.message
+        });
     }
 });
-
 // 3. Análisis de dificultad de preguntas
-app.get('/api/estadisticas/dificultad', async (req, res) => {
+app.get('/api/estadisticas/dificultad-preguntas', async (req, res) => {
     try {
-        const result = await db.execute(`
-            SELECT p.id, p.texto, 
-                   AVG(CASE WHEN rp.respuesta_correcta = 1 THEN 100 ELSE 0 END) as porcentaje_aciertos,
-                   COUNT(rp.id) as veces_respondida
-            FROM preguntas p
-            JOIN respuestas_preguntas rp ON p.id = rp.pregunta_id
-            GROUP BY p.id, p.texto
-            ORDER BY porcentaje_aciertos ASC
-        `);
-        res.json(result.rows);
+        const sql = `
+            WITH 
+            estadisticas_preguntas AS (
+                SELECT 
+                    p.id_pregunta,
+                    p.pregunta_texto,
+                    p.respuesta_a,
+                    p.respuesta_b,
+                    p.respuesta_c,
+                    p.respuesta_d,
+                    p.respuesta_correcta,
+                    COUNT(ru.id_resp_user) AS total_respuestas,
+                    SUM(CASE WHEN ru.respuesta = p.respuesta_correcta THEN 1 ELSE 0 END) AS respuestas_correctas,
+                    ROUND(
+                        (SUM(CASE WHEN ru.respuesta = p.respuesta_correcta THEN 1 ELSE 0 END) * 100.0) / 
+                        NULLIF(COUNT(ru.id_resp_user), 0), 2
+                    ) AS porcentaje_aciertos
+                FROM PREGUNTAS p
+                LEFT JOIN RESPUESTA_USUARIO ru ON ru.pregunta_id_pregunta = p.id_pregunta
+                GROUP BY p.id_pregunta, p.pregunta_texto, p.respuesta_a, p.respuesta_b, p.respuesta_c, p.respuesta_d, p.respuesta_correcta
+            )
+            SELECT 
+                ep.id_pregunta,
+                ep.pregunta_texto,
+                ep.respuesta_a,
+                ep.respuesta_b,
+                ep.respuesta_c,
+                ep.respuesta_d,
+                ep.respuesta_correcta,
+                ep.total_respuestas,
+                ep.respuestas_correctas,
+                ep.porcentaje_aciertos,
+                CASE 
+                    WHEN ep.porcentaje_aciertos >= 80 THEN 'MUY FÁCIL'
+                    WHEN ep.porcentaje_aciertos >= 60 THEN 'FÁCIL'
+                    WHEN ep.porcentaje_aciertos >= 40 THEN 'MEDIO'
+                    WHEN ep.porcentaje_aciertos >= 20 THEN 'DIFÍCIL'
+                    ELSE 'MUY DIFÍCIL'
+                END AS nivel_dificultad
+            FROM estadisticas_preguntas ep
+            WHERE ep.total_respuestas > 0
+            ORDER BY ep.porcentaje_aciertos ASC NULLS LAST
+        `;
+        
+        const result = await db.execute(sql);
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'No se encontraron datos de preguntas',
+                data: []
+            });
+        }
+        
+        // Calcular la pregunta más difícil
+        const menorPorcentaje = result.rows[0]?.PORCENTAJE_ACIERTOS;
+        const preguntasMasDificiles = result.rows.filter(row => row.PORCENTAJE_ACIERTOS === menorPorcentaje);
+        
+        res.json({
+            success: true,
+            message: 'Análisis de dificultad de preguntas obtenido correctamente',
+            totalPreguntas: result.rows.length,
+            preguntaMasDificil: {
+                id_pregunta: preguntasMasDificiles[0].ID_PREGUNTA,
+                pregunta_texto: preguntasMasDificiles[0].PREGUNTA_TEXTO,
+                respuesta_correcta: preguntasMasDificiles[0].RESPUESTA_CORRECTA,
+                porcentaje_aciertos: preguntasMasDificiles[0].PORCENTAJE_ACIERTOS,
+                nivel_dificultad: preguntasMasDificiles[0].NIVEL_DIFICULTAD
+            },
+            data: result.rows
+        });
+        
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.error('Error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error interno del servidor',
+            detalles: error.message
+        });
     }
 });
 

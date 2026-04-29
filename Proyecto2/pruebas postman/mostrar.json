@@ -1,0 +1,78 @@
+{
+  "message": "Consulta finalizada",
+  "totalConsultas": 5,
+  "totalExitosas": 5,
+  "resultados": {
+    "DEPARTAMENTO": {
+      "consulta": {
+        "id": 1
+      },
+      "encontrado": true,
+      "datos": {
+        "CODIGO": 1,
+        "NOMBRE": "Guatemala Actualizado"
+      },
+      "mensaje": null
+    },
+    "CENTRO": {
+      "consulta": {
+        "id": 1
+      },
+      "encontrado": true,
+      "datos": {
+        "ID_CENTRO": 1,
+        "NOMBRE": "Centro de Evaluación Zona 12"
+      },
+      "mensaje": null
+    },
+    "ESCUELA": {
+      "consulta": {
+        "id_escuela": 1
+      },
+      "encontrado": true,
+      "datos": {
+        "ID_ESCUELA": 1,
+        "NOMBRE": "Escuela de Manejo AutoMaster",
+        "DIRECCION": "Avenida Reforma 15-45, Zona 10",
+        "ACUERDO": "ESC-AM-001"
+      },
+      "mensaje": null
+    },
+    "REGISTRO": {
+      "consulta": {
+        "id_registro": 1
+      },
+      "encontrado": true,
+      "datos": {
+        "ID_REGISTRO": 1,
+        "UBICACION_ESCUELA_ID_ESCUELA": 1,
+        "UBICACION_CENTRO_ID_CENTRO": 1,
+        "MUNICIPIO_ID_MUNICIPIO": 1,
+        "MUNICIPIO_DEPARTAMENTO_ID_DEPARTAMENTO": 1,
+        "FECHA": "2025-01-15T06:00:00.000Z",
+        "TIPO_TRAMITE": "Licencia de Conducir",
+        "TIPO_LICENCIA": "A",
+        "NOMBRE_COMPLETO": "Juan Carlos López García",
+        "GENERO": "M"
+      },
+      "mensaje": null
+    },
+    "PREGUNTAS": {
+      "consulta": {
+        "id_pregunta": 1
+      },
+      "encontrado": true,
+      "datos": {
+        "ID_PREGUNTA": 1,
+        "PREGUNTA_TEXTO": "¿Cuál es la distancia mínima que debe mantener entre vehículos en carretera?",
+        "RESPUESTA_A": "2 metros",
+        "RESPUESTA_B": "3 segundos de distancia",
+        "RESPUESTA_C": "5 metros",
+        "RESPUESTA_D": "1 segundo de distancia",
+        "RESPUESTA_CORRECTA": "B"
+      },
+      "mensaje": null
+    }
+  },
+  "errores": null
+}

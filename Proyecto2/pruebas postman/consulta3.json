@@ -1,0 +1,66 @@
+{
+  "success": true,
+  "message": "Análisis de dificultad de preguntas obtenido correctamente",
+  "totalPreguntas": 4,
+  "preguntaMasDificil": {
+    "id_pregunta": 2,
+    "pregunta_texto": "¿Qué significa una señal de alto?",
+    "respuesta_correcta": "B",
+    "porcentaje_aciertos": 50,
+    "nivel_dificultad": "MEDIO"
+  },
+  "data": [
+    {
+      "ID_PREGUNTA": 2,
+      "PREGUNTA_TEXTO": "¿Qué significa una señal de alto?",
+      "RESPUESTA_A": "Reducir velocidad",
+      "RESPUESTA_B": "Detenerse completamente",
+      "RESPUESTA_C": "Ceder el paso",
+      "RESPUESTA_D": "Continuar con precaución",
+      "RESPUESTA_CORRECTA": "B",
+      "TOTAL_RESPUESTAS": 2,
+      "RESPUESTAS_CORRECTAS": 1,
+      "PORCENTAJE_ACIERTOS": 50,
+      "NIVEL_DIFICULTAD": "MEDIO"
+    },
+    {
+      "ID_PREGUNTA": 4,
+      "PREGUNTA_TEXTO": "¿Qué debe hacer al ver una ambulancia con sirena activada?",
+      "RESPUESTA_A": "Mantener velocidad",
+      "RESPUESTA_B": "Acelerar para salir del camino",
+      "RESPUESTA_C": "Orillarse y detenerse",
+      "RESPUESTA_D": "Ignorar la sirena",
+      "RESPUESTA_CORRECTA": "C",
+      "TOTAL_RESPUESTAS": 1,
+      "RESPUESTAS_CORRECTAS": 1,
+      "PORCENTAJE_ACIERTOS": 100,
+      "NIVEL_DIFICULTAD": "MUY FÁCIL"
+    },
+    {
+      "ID_PREGUNTA": 3,
+      "PREGUNTA_TEXTO": "¿Cuál es el límite de velocidad en zona escolar?",
+      "RESPUESTA_A": "20 km/h",
+      "RESPUESTA_B": "30 km/h",
+      "RESPUESTA_C": "40 km/h",
+      "RESPUESTA_D": "50 km/h",
+      "RESPUESTA_CORRECTA": "A",
+      "TOTAL_RESPUESTAS": 1,
+      "RESPUESTAS_CORRECTAS": 1,
+      "PORCENTAJE_ACIERTOS": 100,
+      "NIVEL_DIFICULTAD": "MUY FÁCIL"
+    },
+    {
+      "ID_PREGUNTA": 1,
+      "PREGUNTA_TEXTO": "¿Cuál es la distancia mínima que debe mantener entre vehículos en carretera?",
+      "RESPUESTA_A": "2 metros",
+      "RESPUESTA_B": "3 segundos de distancia",
+      "RESPUESTA_C": "5 metros",
+      "RESPUESTA_D": "1 segundo de distancia",
+      "RESPUESTA_CORRECTA": "B",
+      "TOTAL_RESPUESTAS": 2,
+      "RESPUESTAS_CORRECTAS": 2,
+      "PORCENTAJE_ACIERTOS": 100,
+      "NIVEL_DIFICULTAD": "MUY FÁCIL"
+    }
+  ]
+}

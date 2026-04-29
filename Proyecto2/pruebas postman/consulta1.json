@@ -1,0 +1,52 @@
+{
+  "success": true,
+  "message": "Estadísticas obtenidas correctamente",
+  "nota_aprobatoria": "61%",
+  "totalRegistros": 4,
+  "data": [
+    {
+      "ID_CENTRO": 2,
+      "CENTRO_NOMBRE": "Centro de Evaluación Antigua Guatemala",
+      "ID_ESCUELA": 1,
+      "ESCUELA_NOMBRE": "Escuela de Manejo AutoMaster",
+      "TOTAL_EXAMENES": 1,
+      "PROMEDIO_TEORICO": 100,
+      "PROMEDIO_PRACTICO": 90.91,
+      "NOTA_FINAL": 95.46,
+      "ESTADO": "APROBADO"
+    },
+    {
+      "ID_CENTRO": 3,
+      "CENTRO_NOMBRE": "Centro de Evaluación Escuintla",
+      "ID_ESCUELA": 3,
+      "ESCUELA_NOMBRE": "Instituto de Conducción Segura",
+      "TOTAL_EXAMENES": 1,
+      "PROMEDIO_TEORICO": null,
+      "PROMEDIO_PRACTICO": null,
+      "NOTA_FINAL": null,
+      "ESTADO": "NO APROBADO"
+    },
+    {
+      "ID_CENTRO": 1,
+      "CENTRO_NOMBRE": "Centro de Evaluación Zona 12",
+      "ID_ESCUELA": 2,
+      "ESCUELA_NOMBRE": "Academia Vial GuateDrive",
+      "TOTAL_EXAMENES": 1,
+      "PROMEDIO_TEORICO": 50,
+      "PROMEDIO_PRACTICO": 75,
+      "NOTA_FINAL": 62.5,
+      "ESTADO": "APROBADO"
+    },
+    {
+      "ID_CENTRO": 1,
+      "CENTRO_NOMBRE": "Centro de Evaluación Zona 12",
+      "ID_ESCUELA": 1,
+      "ESCUELA_NOMBRE": "Escuela de Manejo AutoMaster",
+      "TOTAL_EXAMENES": 1,
+      "PROMEDIO_TEORICO": 100,
+      "PROMEDIO_PRACTICO": 88.57,
+      "NOTA_FINAL": 94.29,
+      "ESTADO": "APROBADO"
+    }
+  ]
+}

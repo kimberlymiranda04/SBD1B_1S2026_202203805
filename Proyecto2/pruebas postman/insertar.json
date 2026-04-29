@@ -1,0 +1,10 @@
+{
+  "message": "Proceso de carga finalizado",
+  "totalExitosos": 50,
+  "totalFallidos": 3,
+  "detallesErrores": [
+    "Error en MUNICIPIO: ORA-02291: integrity constraint (BD1.FK_MUNI_DEPTO) violated - parent key not found\nHelp: https://docs.oracle.com/error-help/db/ora-02291/ | Datos: {\"nombre\":\"Antigua Guatemala\",\"codigo\":\"05\",\"departamento_id_departamento\":2}",
+    "Error en REGISTRO: ORA-02291: integrity constraint (BD1.FK_REG_DEPTO) violated - parent key not found\nHelp: https://docs.oracle.com/error-help/db/ora-02291/ | Datos: {\"ubicacion_escuela_id_escuela\":2,\"ubicacion_centro_id_centro\":2,\"municipio_id_municipio\":5,\"municipio_departamento_id_departamento\":2,\"fecha\":\"2025-01-18\",\"tipo_tramite\":\"Licencia de Conducir\",\"tipo_licencia\":\"B\",\"nombre_completo\":\"Pedro José Hernández Ruiz\",\"genero\":\"M\"}",
+    "Error en EXAMEN: ORA-02291: integrity constraint (BD1.FK_EXAM_DEPTO) violated - parent key not found\nHelp: https://docs.oracle.com/error-help/db/ora-02291/ | Datos: {\"registro_id_registro\":5,\"correlativo_id_correlativo\":5,\"registro_id_escuela\":2,\"registro_id_centro\":2,\"registro_municipio_id_municipio\":5,\"registro_municipio_departamento_id_departamento\":2}"
+  ]
+}
